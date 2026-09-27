@@ -16830,6 +16830,10 @@ core_default.registerLanguage("javascript", javascript2);
 core_default.registerLanguage("css", css2);
 core_default.registerLanguage("json", json);
 var IFRAME_SANDBOX = "allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox";
+function iframeSandbox(url) {
+  if (!url) return void 0;
+  return /^(?!\/\/)[/]/.test(url) ? IFRAME_SANDBOX : void 0;
+}
 var clamp = (v, lo, hi) => Math.min(Math.max(v, lo), hi);
 var GAP = 1;
 var DIVIDER = 4;
@@ -18002,11 +18006,11 @@ function BrowserPane(props) {
       ),
       /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { type: "button", className: "dsh-wt_browserGo", onClick: go, children: "\u2197" })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime.jsx)("iframe", { className: "dsh-wt_paneFrame", src, title: "browser", sandbox: IFRAME_SANDBOX }, props.reloadKey)
+    /* @__PURE__ */ (0, import_jsx_runtime.jsx)("iframe", { className: "dsh-wt_paneFrame", src, title: "browser", sandbox: iframeSandbox(src) }, props.reloadKey)
   ] });
 }
 function IframePane(props) {
-  return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("iframe", { className: "dsh-wt_paneFrame", src: props.url, title: props.title ?? "", sandbox: IFRAME_SANDBOX }, props.reloadKey);
+  return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("iframe", { className: "dsh-wt_paneFrame", src: props.url, title: props.title ?? "", sandbox: iframeSandbox(props.url) }, props.reloadKey);
 }
 function AnimPane(props) {
   const initial = props.content?.url || "";
@@ -18036,7 +18040,7 @@ function AnimPane(props) {
       ),
       /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { type: "button", className: "dsh-wt_browserGo", onClick: go, children: "\u2197" })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime.jsx)("iframe", { className: "dsh-wt_paneFrame", src, title: "anim", sandbox: IFRAME_SANDBOX }, props.reloadKey)
+    /* @__PURE__ */ (0, import_jsx_runtime.jsx)("iframe", { className: "dsh-wt_paneFrame", src, title: "anim", sandbox: iframeSandbox(src) }, props.reloadKey)
   ] });
 }
 function ThemeIcon({ mode, size }) {
@@ -19208,7 +19212,7 @@ function FileViewer(props) {
   const ext = (props.path.split(".").pop() || "").toLowerCase();
   const fileUrl = "/api/worktable/file?path=" + encodeURIComponent(props.path);
   if (ext === "pdf") {
-    return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("iframe", { className: "dsh-wt_paneFrame", src: fileUrl, title: basenameOf2(props.path), sandbox: IFRAME_SANDBOX });
+    return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("iframe", { className: "dsh-wt_paneFrame", src: fileUrl, title: basenameOf2(props.path), sandbox: iframeSandbox(fileUrl) });
   }
   if (IMAGE_EXTS.test("." + ext)) {
     return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "dsh-wt_imgView", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("img", { src: fileUrl, alt: basenameOf2(props.path) }) });

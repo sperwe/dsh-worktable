@@ -36,15 +36,28 @@ export type SplitContent =
 /**
  * 内容窗 iframe 的 sandbox 属性（安全边界，见 issue #11）。
  *
- * 窗口里可能托管的是**任意来源的网页**（外链，或 /api/worktable/site/ 下的本地产物）。
- * 不加 sandbox 时 iframe 与宿主同源，被托管的脚本能读父页面的 DOM 与 localStorage
- * （含项目注册表与会话标识），构成 stored XSS。
+ * **只对同源（站内）内容加** —— 这才是 XSS 那条链：`/api/worktable/site/*` 与
+ * `/api/worktable/file*` 以 `text/html` 同源下发任意 HTML，脚本能读父页面 DOM
+ * 与 localStorage（含项目注册表与会话标识）。跨源外链（`https://…`）本来就被
+ * 同源策略挡着，**不受这条威胁影响**，硬加 sandbox 只会破坏它们的 cookie /
+ * localStorage / 登录态而毫无安全收益（实测：加了会白屏）。
  *
  * 刻意**不给** `allow-same-origin` —— 它正是同源访问的开关。`allow-scripts` 保留，
- * 这样预览的网页仍能正常跑自己的 JS；`allow-forms` / `allow-popups` 让登录与跳转可用。
+ * 预览的网页仍能跑自己的 JS；`allow-forms` / `allow-popups` 让登录与跳转可用。
  * 插件自身的持久化全部发生在宿主页面（dsh.worktable.*），不经过 iframe，故不受影响。
  */
 const IFRAME_SANDBOX = 'allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox'
+
+/**
+ * 该 iframe 是否需要同源隔离。
+ * 站内相对路径（含 `/api/worktable/site|file|template`）= 同源，需 sandbox；
+ * 绝对 URL（http/https/about）= 跨源，本就隔离，不加。
+ */
+function iframeSandbox(url: string): string | undefined {
+  if (!url) return undefined
+  // 站内相对路径；协议相对 //host 也算跨源
+  return /^(?!\/\/)[/]/.test(url) ? IFRAME_SANDBOX : undefined
+}
 
 /** 一个内容标签页 */
 export type PaneTab = { id: string; title: string; content: SplitContent }
@@ -1448,14 +1461,14 @@ function BrowserPane(props: { row: PaneRow; index: number; tabId: string; conten
         />
         <button type="button" className="dsh-wt_browserGo" onClick={go}>↗</button>
       </div>
-      <iframe key={props.reloadKey} className="dsh-wt_paneFrame" src={src} title="browser" sandbox={IFRAME_SANDBOX} />
+      <iframe key={props.reloadKey} className="dsh-wt_paneFrame" src={src} title="browser" sandbox={iframeSandbox(src)} />
     </>
   )
 }
 
 /** iframe 内容标签（网页/站点产物）：刷新统一在标签栏最左（重挂载整页刷新，跨域可靠） */
 function IframePane(props: { url: string; title?: string; reloadKey: number }) {
-  return <iframe key={props.reloadKey} className="dsh-wt_paneFrame" src={props.url} title={props.title ?? ''} sandbox={IFRAME_SANDBOX} />
+  return <iframe key={props.reloadKey} className="dsh-wt_paneFrame" src={props.url} title={props.title ?? ''} sandbox={iframeSandbox(props.url)} />
 }
 
 /** 动画播放窗：iframe 壳 + 地址栏（站内自带项目/场景列表、播放、画幅切换、导出等全部控件） */
@@ -1483,7 +1496,7 @@ function AnimPane(props: { row: PaneRow; index: number; tabId: string; content: 
         />
         <button type="button" className="dsh-wt_browserGo" onClick={go}>↗</button>
       </div>
-      <iframe key={props.reloadKey} className="dsh-wt_paneFrame" src={src} title="anim" sandbox={IFRAME_SANDBOX} />
+      <iframe key={props.reloadKey} className="dsh-wt_paneFrame" src={src} title="anim" sandbox={iframeSandbox(src)} />
     </>
   )
 }
@@ -2492,9 +2505,10 @@ function FileViewer(props: { path: string }) {
   const ext = (props.path.split('.').pop() || '').toLowerCase()
   const fileUrl = '/api/worktable/file?path=' + encodeURIComponent(props.path)
   if (ext === 'pdf') {
-    // PDF 走浏览器内置阅读器：sandbox 同样适用（PDF 是二进制流，无脚本可执行）；
-    // 代价是 Chromium 内置阅读器的部分 UI 在 sandbox 下可能退化，如真出现再单独放宽。
-    return <iframe className="dsh-wt_paneFrame" src={fileUrl} title={basenameOf(props.path)} sandbox={IFRAME_SANDBOX} />
+    // PDF 是二进制流、无脚本可执行，但 Chromium 内置阅读器在 sandbox 下部分 UI 会退化。
+    // fileUrl 以 `/` 开头（站内）→ 会加 sandbox；如真出现阅读器异常，
+    // 可在 iframeSandbox 里对 file?path=*.pdf 放行 allow-same-origin（该响应无脚本，隔离无意义）。
+    return <iframe className="dsh-wt_paneFrame" src={fileUrl} title={basenameOf(props.path)} sandbox={iframeSandbox(fileUrl)} />
   }
   if (IMAGE_EXTS.test('.' + ext)) {
     return (
