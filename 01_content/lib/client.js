@@ -16834,6 +16834,16 @@ function iframeSandbox(url) {
   if (!url) return void 0;
   return /^(?!\/\/)[/]/.test(url) ? IFRAME_SANDBOX : void 0;
 }
+function normalizeBrowserUrl(input) {
+  const u = input.trim();
+  if (!u) return null;
+  if (/^(?!\/\/)[/]/.test(u)) return u;
+  if (/^https?:\/\//i.test(u)) return u;
+  if (u.startsWith("//")) return "https:" + u;
+  if (/^[a-z][a-z0-9+.-]*:/i.test(u)) return u;
+  if (/^[^/?#\s]+\.[^/?#\s]+/.test(u) || /^localhost(:\d+)?/i.test(u)) return "https://" + u;
+  return null;
+}
 var clamp = (v, lo, hi) => Math.min(Math.max(v, lo), hi);
 var GAP = 1;
 var DIVIDER = 4;
@@ -17983,8 +17993,7 @@ function BrowserPane(props) {
   const [url, setUrl] = (0, import_react.useState)(initial);
   const [src, setSrc] = (0, import_react.useState)(initial);
   const go = () => {
-    const u = url.trim();
-    const ok = /^(\/|https?:\/\/)/i.test(u) ? u : "about:blank";
+    const ok = normalizeBrowserUrl(url) ?? "about:blank";
     setSrc(ok);
     if (ok !== "about:blank") {
       splitStore.setTabContent(props.row, props.index, props.tabId, { kind: "builtin", type: "browser", url: ok });
@@ -18017,8 +18026,7 @@ function AnimPane(props) {
   const [url, setUrl] = (0, import_react.useState)(initial);
   const [src, setSrc] = (0, import_react.useState)(initial || "about:blank");
   const go = () => {
-    const u = url.trim();
-    const ok = /^(\/|https?:\/\/)/i.test(u) ? u : "about:blank";
+    const ok = normalizeBrowserUrl(url) ?? "about:blank";
     setSrc(ok);
     if (ok !== "about:blank") {
       splitStore.setTabContent(props.row, props.index, props.tabId, { kind: "builtin", type: "anim", url: ok });

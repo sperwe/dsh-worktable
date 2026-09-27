@@ -59,6 +59,32 @@ function iframeSandbox(url: string): string | undefined {
   return /^(?!\/\/)[/]/.test(url) ? IFRAME_SANDBOX : undefined
 }
 
+/**
+ * 把地址栏输入规范成可加载的 URL；无法识别时返回 null（调用方回退 about:blank）。
+ *
+ * 原实现只接受 `/` 或 `http(s)://` 开头，于是 `deepseek.com` 这类**省略协议的
+ * 合法网址**被当成非法输入 → 直接跳 `about:blank`，表现为「输入域名就白屏」。
+ * 这里改为：像域名/主机名的输入自动补 `https://`。
+ *
+ * 只影响**实际加载的地址**；输入框显示仍保持用户敲的原文。
+ */
+function normalizeBrowserUrl(input: string): string | null {
+  const u = input.trim()
+  if (!u) return null
+  // 站内绝对路径
+  if (/^(?!\/\/)[/]/.test(u)) return u
+  // 已有 http/https 协议
+  if (/^https?:\/\//i.test(u)) return u
+  // 协议相对 //host
+  if (u.startsWith('//')) return 'https:' + u
+  // 其它协议（ws:、mailto: 等）原样放行
+  if (/^[a-z][a-z0-9+.-]*:/i.test(u)) return u
+  // 裸域名 / 主机[:端口][/路径][?query][#hash] → 补 https://
+  // 须含点或冒号才像主机名，避免把「随便打的字」也当网址
+  if (/^[^/?#\s]+\.[^/?#\s]+/.test(u) || /^localhost(:\d+)?/i.test(u)) return 'https://' + u
+  return null
+}
+
 /** 一个内容标签页 */
 export type PaneTab = { id: string; title: string; content: SplitContent }
 
@@ -1441,8 +1467,7 @@ function BrowserPane(props: { row: PaneRow; index: number; tabId: string; conten
   const [url, setUrl] = useState(initial)
   const [src, setSrc] = useState(initial)
   const go = () => {
-    const u = url.trim()
-    const ok = /^(\/|https?:\/\/)/i.test(u) ? u : 'about:blank'
+    const ok = normalizeBrowserUrl(url) ?? 'about:blank'
     setSrc(ok)
     if (ok !== 'about:blank') {
       // 地址回写：刷新/重开布局时保持当前网址
@@ -1477,8 +1502,7 @@ function AnimPane(props: { row: PaneRow; index: number; tabId: string; content: 
   const [url, setUrl] = useState(initial)
   const [src, setSrc] = useState(initial || 'about:blank')
   const go = () => {
-    const u = url.trim()
-    const ok = /^(\/|https?:\/\/)/i.test(u) ? u : 'about:blank'
+    const ok = normalizeBrowserUrl(url) ?? 'about:blank'
     setSrc(ok)
     if (ok !== 'about:blank') {
       splitStore.setTabContent(props.row, props.index, props.tabId, { kind: 'builtin', type: 'anim', url: ok })
