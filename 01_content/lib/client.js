@@ -7806,6 +7806,7 @@ var css = xterm_default + "\n" + [
   // 管理项目（编辑模式）
   ".dsh-wt_manage{position:relative;z-index:12;display:flex;flex-direction:column;gap:4px;padding:6px;border:1px solid var(--dsw-alias-border-l2,#3a4150);border-radius:8px;background:var(--dsw-alias-bg-base,#0b0e14)}",
   ".dsh-wt_manageHead{display:flex;align-items:center;justify-content:space-between;padding:1px 2px 4px}",
+  ".dsh-wt_manageHint{padding:0 2px 6px;font-size:11px;line-height:1.5;opacity:.62}",
   ".dsh-wt_manageTitle{font-size:11px;font-weight:600;letter-spacing:.04em;color:var(--dsw-alias-label-primary,#e6e8eb)}",
   ".dsh-wt_settingsClose{position:absolute;top:6px;right:6px;width:20px;height:20px;padding:0;display:flex;align-items:center;justify-content:center;border:none;border-radius:6px;background:transparent;color:var(--dsw-alias-label-tertiary,#7d8aa5);font-size:13px;line-height:1;cursor:pointer}",
   ".dsh-wt_settingsClose:hover{background:var(--dsw-alias-fill-l1,rgba(255,255,255,.06));color:var(--dsw-alias-label-primary,#dbe4f3)}",
@@ -8432,6 +8433,7 @@ var zh = {
   "manage.hide": "\u9690\u85CF",
   "manage.show": "\u663E\u793A",
   "manage.removed": "\u5DF2\u5220\u9664\u7684\u9879\u76EE",
+  "manage.hint": "\u70B9\u6BCF\u884C\u53F3\u8FB9\u7684 \u2715 \u53EF\u5220\u9664\u8BE5\u9879\u76EE\uFF1B\u5220\u9664\u540E\u53EF\u5728\u4E0B\u65B9\u300C\u5DF2\u5220\u9664\u7684\u9879\u76EE\u300D\u91CC\u91CD\u65B0\u6DFB\u52A0\u3002",
   "manage.readd": "\u91CD\u65B0\u6DFB\u52A0",
   "manage.deleteShortcut": "\u5220\u9664\u5FEB\u6377\u65B9\u5F0F",
   "shortcut.badge": "\u672C\u5730",
@@ -8662,6 +8664,7 @@ var en = {
   "manage.hide": "Hide",
   "manage.show": "Show",
   "manage.removed": "Removed projects",
+  "manage.hint": "Click \u2715 on a row to remove that project; removed projects can be re-added below.",
   "manage.readd": "Re-add",
   "manage.deleteShortcut": "Delete shortcut",
   "shortcut.badge": "Local",
@@ -22926,6 +22929,7 @@ function WorktableSection(props) {
       ] }),
       /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "dsh-wt_menuSep" }),
       /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "dsh-wt_manageHead", children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { className: "dsh-wt_manageTitle", children: t("manage.title") }) }),
+      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "dsh-wt_manageHint", children: t("manage.hint") }),
       effectiveOrder.map((id) => {
         const meta = metas[id];
         const layout = projects.layouts.find((l) => l.id === id);
@@ -23018,6 +23022,28 @@ function WorktableSection(props) {
         /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { className: "dsh-wt_manageScName", children: s.name }),
         /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("button", { type: "button", className: "dsh-wt_manageBtn", title: t("manage.deleteShortcut"), onClick: () => askDelete("shortcut", s.id, s.name), children: "\u2715" })
       ] }, s.id)),
+      projects.removed.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)(import_jsx_runtime2.Fragment, { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "dsh-wt_menuSep" }),
+        /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "dsh-wt_manageHead", children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { className: "dsh-wt_manageTitle", children: t("manage.removed") }) }),
+        projects.removed.map((id) => {
+          const meta = metas[id];
+          const display = projects.nameOverrides[id] ?? meta?.name ?? id;
+          return /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "dsh-wt_manageRow dsh-wt_manageRowOff", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { className: "dsh-wt_manageGrip", "aria-hidden": true, children: "\u22EF" }),
+            /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { className: "dsh-wt_manageScName", children: display }),
+            /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
+              "button",
+              {
+                type: "button",
+                className: "dsh-wt_manageBtn",
+                title: t("manage.readd"),
+                onClick: () => persistProjects((prev) => ({ ...prev, removed: prev.removed.filter((x) => x !== id) })),
+                children: t("manage.readd")
+              }
+            )
+          ] }, id);
+        })
+      ] }),
       /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "dsh-wt_versionRow", children: [
         /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("span", { children: [
           "v",

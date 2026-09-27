@@ -2905,6 +2905,7 @@ function buildCustomLayoutPrompt(req: string): string {
           <div className="dsh-wt_manageHead">
             <span className="dsh-wt_manageTitle">{t('manage.title')}</span>
           </div>
+          <div className="dsh-wt_manageHint">{t('manage.hint')}</div>
           {effectiveOrder.map((id) => {
             const meta = metas[id]
             const layout = projects.layouts.find((l) => l.id === id)
@@ -2968,6 +2969,30 @@ function buildCustomLayoutPrompt(req: string): string {
               <button type="button" className="dsh-wt_manageBtn" title={t('manage.deleteShortcut')} onClick={() => askDelete('shortcut', s.id, s.name)}>✕</button>
             </div>
           ))}
+          {projects.removed.length > 0 && (
+            <>
+              <div className="dsh-wt_menuSep" />
+              <div className="dsh-wt_manageHead">
+                <span className="dsh-wt_manageTitle">{t('manage.removed')}</span>
+              </div>
+              {projects.removed.map((id) => {
+                const meta = metas[id]
+                const display = projects.nameOverrides[id] ?? meta?.name ?? id
+                return (
+                  <div key={id} className="dsh-wt_manageRow dsh-wt_manageRowOff">
+                    <span className="dsh-wt_manageGrip" aria-hidden>⋯</span>
+                    <span className="dsh-wt_manageScName">{display}</span>
+                    <button
+                      type="button"
+                      className="dsh-wt_manageBtn"
+                      title={t('manage.readd')}
+                      onClick={() => persistProjects((prev) => ({ ...prev, removed: prev.removed.filter((x) => x !== id) }))}
+                    >{t('manage.readd')}</button>
+                  </div>
+                )
+              })}
+            </>
+          )}
           <div className="dsh-wt_versionRow">
             <span>
               v{LOCAL_VERSION}

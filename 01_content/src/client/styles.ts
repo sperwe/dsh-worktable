@@ -52,6 +52,7 @@ export const css = xtermCss + '\n' + [
   // 管理项目（编辑模式）
   '.dsh-wt_manage{position:relative;z-index:12;display:flex;flex-direction:column;gap:4px;padding:6px;border:1px solid var(--dsw-alias-border-l2,#3a4150);border-radius:8px;background:var(--dsw-alias-bg-base,#0b0e14)}',
   '.dsh-wt_manageHead{display:flex;align-items:center;justify-content:space-between;padding:1px 2px 4px}',
+  '.dsh-wt_manageHint{padding:0 2px 6px;font-size:11px;line-height:1.5;opacity:.62}',
   '.dsh-wt_manageTitle{font-size:11px;font-weight:600;letter-spacing:.04em;color:var(--dsw-alias-label-primary,#e6e8eb)}',
   '.dsh-wt_settingsClose{position:absolute;top:6px;right:6px;width:20px;height:20px;padding:0;display:flex;align-items:center;justify-content:center;border:none;border-radius:6px;background:transparent;color:var(--dsw-alias-label-tertiary,#7d8aa5);font-size:13px;line-height:1;cursor:pointer}',
   '.dsh-wt_settingsClose:hover{background:var(--dsw-alias-fill-l1,rgba(255,255,255,.06));color:var(--dsw-alias-label-primary,#dbe4f3)}',

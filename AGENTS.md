@@ -233,3 +233,49 @@ node --check lib/index.js
 - 发布版安装（给用户）：`dsh plugin --profile web add "https://github.com/Aisland-SJL/dsh-worktable/releases/latest/download/dsh-worktable.tgz"`（依赖每个 Release 的固定名资产）。
 - bundle 层只在启动时组合：改动后必须重启 dsh web 并刷新 GUI。
 
+
+## 🔑 桌面端（DSH Desktop）安装与加载机制（2026-09-27 实证）
+
+官方 issue #3「使用 dsh-Desktop 安装该插件时没有工作台入口」长期无人回复。实际原因是注册机制 misunderstood：
+
+### 1. 注册 = `package.json` 两处，不是 `dsh.plugin.json`
+
+profile 只认 **`dependencies`** + **`dsh.profile.bundles`**，两处缺一即**静默不加载**：
+
+- `dsh.plugin.json` 与插件自带的 `cordis.patch.yml` **都不参与注册判定**，改它们没用
+- `bundleManifest()`：没有 `dsh.bundle` 字段的包只是普通依赖，不进 profile 层
+- `reconcile()`（dsh-app-boot）**只对新增依赖**补写 bundles —— 半途而废的残局不会自我修复
+- 判据：启动时 stderr 的 `skipping profile bundle <pkg>: <reason>`（`reportSkippedBundles`），以及健康端点
+
+### 2. `client.platform: "web"` 不是问题
+
+桌面端 profile 经 `dsh-web-app` bundle 承载，官方 `dsh-client-ui-*` 包**全部**声明 `"platform": "web"` 并在 Desktop 正常运行。
+**不要**据 `platform` 字段判断插件能否用于桌面端。
+
+### 3. 兼容闸门只看 `peerDependencies` 里的 `@deepseek-ai/dsh*`
+
+`evaluatePluginCompatibility()` 仅对 `peerDependencies` 中 `@deepseek-ai/dsh` / `@deepseek-ai/dsh-*` 做 semver 校验；
+本插件 peerDeps 全为 `"*"` → 不匹配 → 直接放行。`dsh.compatibility` 只是**自述声明，不参与闸门**。
+不兼容时可用 `dsh plugin allow-version` 授予精确版本豁免（profile 下 `compatibility.json`）。
+
+### 4. pnpm 大版本必须与 profile 一致
+
+`dsh` CLI 自带 pnpm v10，profile 由 pnpm v11.7.0 创建时直接安装会报
+`ERR_PNPM_UNEXPECTED_STORE`（store v10 vs v11）。用与 profile 相同的大版本驱动即可。
+
+### 5. `lib/` 是入库产物 —— 改 manifest 必须同批重建
+
+`__WT_VERSION__` 在 esbuild 期注入（`build.mjs` 的 `define`），仓库里已提交的 `lib/index.js` 不会随 manifest 变。
+判据：**健康端点自报版本 ≠ `package.json` 的 version → 没重建**。构建必须在 `01_content` 内进行。
+
+### 6. 干净 clone 无 node_modules
+
+`esbuild` 等在 devDependencies，`npm run build` 前需先 `npm install`，否则 `ERR_MODULE_NOT_FOUND`。
+
+## 项目删除与恢复
+
+- 删除入口：侧边栏「工作台」标题栏第二个按钮（`menu.viewOptions`=设置）→ 管理项目面板 → 每行右侧 `✕`。
+- `removeProject()` 走二次确认，清理 `bindings`/`folders`/`views` 并移出 `order`；**对话与项目文件均保留**。
+- `CONSOLE_ID`（控制室）不可删除，代码层兜底拒绝。
+- 删除的 id 进 `projects.removed`；**「已删除的项目」恢复区此前只有文案（`manage.removed`/`manage.readd`）而界面从未渲染**，
+  导致删除不可逆 —— 已在 0.3.4-desktop 补上该区块。
