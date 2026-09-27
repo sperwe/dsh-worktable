@@ -7948,7 +7948,7 @@ var css = xterm_default + "\n" + [
   ".dsh-wt_presetAddText{font-size:10px;line-height:13px}",
   // 项目卡片上的对话绑定按钮（○○ 空心 = 未绑定 / ●● 实心 = 已绑定；CSS 双圆绘制，黑白单色克制：
   // 未绑定次级灰空心、已绑定主色实心，不用强调色；hover 区域 = 22×22 圆角矩形按钮底，
-  // 气泡为 body 级元素向右伸出（跨层显示），垂直居中于按钮）
+  // 气泡为 body 级独立元素（.dsh-wt_bindTip），此处只保留按钮本体样式）
   ".dsh-wt_bindBtn{position:absolute;right:26px;top:50%;transform:translateY(-50%);width:22px;height:22px;margin:0;display:block;border-radius:6px;color:var(--dsw-alias-label-secondary,#9aa4b2);cursor:pointer;user-select:none}",
   ".dsh-wt_bindBtn:hover{background:var(--dsw-alias-fill-l2,rgba(255,255,255,.09));color:var(--dsw-alias-label-primary,#e6e8eb)}",
   ".dsh-wt_bindBtn[data-bound=true]{color:var(--dsw-alias-label-primary,#e6e8eb)}",
@@ -7963,7 +7963,8 @@ var css = xterm_default + "\n" + [
   ".dsh-wt_bindBtn[data-bound=busy] .dsh-wt_bindCircles::after{animation:dsh-wt-busyB 1s ease-in-out infinite}",
   ".dsh-wt_bindBtn[data-bound=done] .dsh-wt_bindCircles,.dsh-wt_bindBtn[data-bound=need] .dsh-wt_bindCircles,.dsh-wt_bindBtn[data-bound=busy] .dsh-wt_bindCircles{filter:drop-shadow(0 0 3px currentColor)}",
   // 气泡为 body 级独立元素（.dsh-wt_bindTip），此处只保留按钮本体样式
-  ".dsh-wt_bindTip{position:fixed;transform:translateY(-50%);padding:5px 9px;border:1px solid var(--dsw-alias-border-l2,#3a4150);border-radius:6px;background:var(--dsw-alias-fill-l2,#171b22);color:var(--dsw-alias-label-primary,#e6e8eb);font-size:11px;line-height:15px;white-space:nowrap;pointer-events:none;z-index:1200;box-shadow:0 4px 12px rgba(0,0,0,.35);display:none}",
+  // 定位由 showBindTip() 在运行时写入 left/top（下方居中 + 视口钳位），故不再设 transform
+  ".dsh-wt_bindTip{position:fixed;max-width:min(280px,calc(100vw - 16px));padding:6px 10px;border:1px solid var(--dsw-alias-border-l1,#262b36);border-radius:7px;background:var(--dsw-alias-bg-layer-1,#f9fafb);color:var(--dsw-alias-label-primary,#0f1115);font-size:11.5px;line-height:1.55;white-space:normal;pointer-events:none;z-index:1200;box-shadow:0 6px 18px rgba(0,0,0,.28);display:none}",
   ".dsh-wt_bindCircles{position:absolute;left:50%;top:50%;width:17px;height:7px;transform:translate(-50%,-50%)}",
   ".dsh-wt_bindCircles::before,.dsh-wt_bindCircles::after{content:'';position:absolute;top:50%;width:6px;height:6px;margin-top:-3px;border-radius:50%;box-sizing:border-box;border:1.2px solid currentColor;background:transparent}",
   ".dsh-wt_bindCircles::before{left:0}",
@@ -8952,7 +8953,7 @@ var CHANGELOG_V030 = `\u66F4\u65B0\u516C\u544A \xB7 v0.3.3
 
 // src/client/updateCheck.ts
 var LOCAL_VERSION = false ? "dev" : "0.3.4-desktop";
-var UPDATE_REPO = "Aisland-SJL/dsh-worktable";
+var UPDATE_REPO = "sperwe/dsh-worktable";
 var K_UPDATE_CHECK = "dsh.worktable.updateCheck.v1";
 var K_LAST_CHECK = "dsh.worktable.lastUpdateCheck.v1";
 var K_SKIP = "dsh.worktable.skipVersion.v1";
@@ -17078,7 +17079,7 @@ function boxPayload(x0, y0, x1, y1) {
   }
   return { primary, line, candidates, limited, src };
 }
-var UPGRADE_CMD = 'dsh plugin --profile web add "https://github.com/Aisland-SJL/dsh-worktable/releases/latest/download/dsh-worktable.tgz"';
+var UPGRADE_CMD = "git -C ~/yyd/dsh-worktable pull && npm --prefix ~/yyd/dsh-worktable/01_content install && npm --prefix ~/yyd/dsh-worktable/01_content run build";
 var UPGRADE_AI = "\u5E2E\u6211\u5347\u7EA7 dsh-worktable\uFF1A\u6267\u884C " + UPGRADE_CMD + "\uFF0C\u5B8C\u6210\u540E\u63D0\u9192\u6211\u91CD\u542F dsh web \u5E76\u5237\u65B0\u9875\u9762";
 async function copyTextSafe(text2) {
   try {
@@ -20108,9 +20109,9 @@ var WAVE_BG_B64 = "/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAYEBQUFBAYFBQUHBgYHCQ8KCQgIC
 // src/client/index.tsx
 var import_jsx_runtime2 = require("react/jsx-runtime");
 var LOCAL_VERSION2 = false ? "dev" : "0.3.4-desktop";
-var UPDATE_REPO2 = "Aisland-SJL/dsh-worktable";
-var UPGRADE_CMD2 = 'dsh plugin --profile web add "https://github.com/Aisland-SJL/dsh-worktable/releases/latest/download/dsh-worktable.tgz"';
-var UPGRADE_AI2 = "\u5E2E\u6211\u5347\u7EA7 dsh-worktable\uFF1A\u6267\u884C " + UPGRADE_CMD2 + "\uFF0C\u5B8C\u6210\u540E\u63D0\u9192\u6211\u91CD\u542F dsh web \u5E76\u5237\u65B0\u9875\u9762";
+var UPDATE_REPO2 = "sperwe/dsh-worktable";
+var UPGRADE_CMD2 = "git -C ~/yyd/dsh-worktable pull && npm --prefix ~/yyd/dsh-worktable/01_content install && npm --prefix ~/yyd/dsh-worktable/01_content run build";
+var UPGRADE_AI2 = "\u5E2E\u6211\u5347\u7EA7 dsh-worktable\uFF1A\u6267\u884C " + UPGRADE_CMD2 + `\uFF0C\u5B8C\u6210\u540E\u63D0\u9192\u6211\u91CD\u542F DeepSeek Harness \u684C\u9762\u7AEF\uFF08osascript -e 'tell application "DeepSeek Harness" to quit' \u540E\u91CD\u65B0\u6253\u5F00\uFF09`;
 var ICON_SYNC = /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("svg", { viewBox: "0 0 16 16", "aria-hidden": true, children: [
   /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("path", { fill: "none", stroke: "currentColor", strokeWidth: "1.6", strokeLinecap: "round", strokeLinejoin: "round", d: "M1.5 8a6.5 6.5 0 0 1 11.1-4.6L14.5 5" }),
   /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("path", { fill: "none", stroke: "currentColor", strokeWidth: "1.6", strokeLinecap: "round", strokeLinejoin: "round", d: "M14.5 1.5V5h-3.5" }),
@@ -20713,12 +20714,15 @@ function showBindTip(btn) {
   }
   bindTipEl.textContent = tip;
   const r = btn.getBoundingClientRect();
-  bindTipEl.style.left = r.right + 8 + "px";
-  bindTipEl.style.top = r.top + r.height / 2 + "px";
   bindTipEl.style.display = "block";
   const tw = bindTipEl.offsetWidth;
-  const x = r.right + 8 + tw > window.innerWidth - 8 ? Math.max(8, r.left - 8 - tw) : r.right + 8;
+  const th = bindTipEl.offsetHeight;
+  const x = Math.min(Math.max(8, r.left + r.width / 2 - tw / 2), Math.max(8, window.innerWidth - tw - 8));
+  const below = r.bottom + 6;
+  const y = below + th <= window.innerHeight - 8 ? below : Math.max(8, r.top - th - 6);
   bindTipEl.style.left = x + "px";
+  bindTipEl.style.top = y + "px";
+  bindTipEl.style.transform = "none";
 }
 function hideBindTip() {
   if (bindTipEl) bindTipEl.style.display = "none";

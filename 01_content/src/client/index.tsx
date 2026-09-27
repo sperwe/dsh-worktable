@@ -26,9 +26,9 @@ type DockMode = 'footer' | 'float'
 // ── 更新检查（客户端直连 GitHub Releases API，只读 GET；失败静默）──
 declare const __WT_VERSION__: string
 const LOCAL_VERSION = typeof __WT_VERSION__ === 'undefined' ? 'dev' : __WT_VERSION__
-const UPDATE_REPO = 'Aisland-SJL/dsh-worktable'
-const UPGRADE_CMD = 'dsh plugin --profile web add "https://github.com/Aisland-SJL/dsh-worktable/releases/latest/download/dsh-worktable.tgz"'
-const UPGRADE_AI = '帮我升级 dsh-worktable：执行 ' + UPGRADE_CMD + '，完成后提醒我重启 dsh web 并刷新页面'
+const UPDATE_REPO = 'sperwe/dsh-worktable'
+const UPGRADE_CMD = 'git -C ~/yyd/dsh-worktable pull && npm --prefix ~/yyd/dsh-worktable/01_content install && npm --prefix ~/yyd/dsh-worktable/01_content run build'
+const UPGRADE_AI = '帮我升级 dsh-worktable：执行 ' + UPGRADE_CMD + '，完成后提醒我重启 DeepSeek Harness 桌面端（osascript -e \'tell application "DeepSeek Harness" to quit\' 后重新打开）'
 // 更新提示图标（手绘 SVG，避免 emoji 跨平台渲染差异）
 const ICON_SYNC = (
   <svg viewBox="0 0 16 16" aria-hidden>
@@ -734,7 +734,8 @@ async function fetchSessionGroups(): Promise<{ groups: { title: string; sessions
   } catch { return { groups: [], current: '' } }
 }
 
-/** hover 气泡：挂在 document.body 的独立元素（不受侧栏堆叠上下文限制，可向右伸出显示） */
+/** hover 气泡：挂在 document.body 的独立元素（不受侧栏堆叠上下文限制）
+ *  定位改为「卡片下方居中」而非向右伸——向右会盖住卡片与右侧面板，深色主题下与卡片糊成一片。 */
 let bindTipEl: HTMLDivElement | null = null
 function showBindTip(btn: HTMLElement) {
   const tip = btn.getAttribute('data-tip')
@@ -746,13 +747,17 @@ function showBindTip(btn: HTMLElement) {
   }
   bindTipEl.textContent = tip
   const r = btn.getBoundingClientRect()
-  bindTipEl.style.left = (r.right + 8) + 'px'
-  bindTipEl.style.top = (r.top + r.height / 2) + 'px'
   bindTipEl.style.display = 'block'
-  // 右侧放不下时翻到左侧（一般不会：侧栏 ~288px + 气泡 ~200px 远小于视口宽）
+  // 先量后摆：display:block 后才有 offsetWidth；水平居中于按钮，再双向钳进视口留边
   const tw = bindTipEl.offsetWidth
-  const x = r.right + 8 + tw > window.innerWidth - 8 ? Math.max(8, r.left - 8 - tw) : r.right + 8
+  const th = bindTipEl.offsetHeight
+  const x = Math.min(Math.max(8, r.left + r.width / 2 - tw / 2), Math.max(8, window.innerWidth - tw - 8))
+  // 默认落在按钮下方；下方顶到视口底部就翻到上方
+  const below = r.bottom + 6
+  const y = below + th <= window.innerHeight - 8 ? below : Math.max(8, r.top - th - 6)
   bindTipEl.style.left = x + 'px'
+  bindTipEl.style.top = y + 'px'
+  bindTipEl.style.transform = 'none'
 }
 function hideBindTip() {
   if (bindTipEl) bindTipEl.style.display = 'none'
