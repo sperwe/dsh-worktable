@@ -486,7 +486,7 @@ function boxPayload(x0: number, y0: number, x1: number, y1: number): { primary: 
 }
 
 /** 更新方法：复制给 AI 的升级指令（插件不自更新；升级由用户或其 Agent 执行 + 重启） */
-const UPGRADE_CMD = 'dsh plugin --profile web add "https://github.com/Aisland-SJL/dsh-worktable/releases/latest/download/dsh-worktable.tgz"'
+const UPGRADE_CMD = 'git -C ~/yyd/dsh-worktable pull && npm --prefix ~/yyd/dsh-worktable/01_content install && npm --prefix ~/yyd/dsh-worktable/01_content run build'
 const UPGRADE_AI = '帮我升级 dsh-worktable：执行 ' + UPGRADE_CMD + '，完成后提醒我重启 dsh web 并刷新页面'
 
 async function copyTextSafe(text: string): Promise<boolean> {
