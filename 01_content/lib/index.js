@@ -152,6 +152,12 @@ var FILE_TYPES = {
   webm: "video/webm"
 };
 var SITE_PREFIX = "/api/worktable/site";
+var SITE_SECURITY_HEADERS = {
+  "content-security-policy": "sandbox allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox",
+  "x-content-type-options": "nosniff",
+  "referrer-policy": "no-referrer"
+};
+var SCRIPTABLE_FILE_TYPES = /* @__PURE__ */ new Set(["html", "htm", "svg", "xml", "xhtml"]);
 var TEMPLATE_PREFIX = "/api/worktable/template";
 var loadProbeAttempts = 0;
 function loadPkg(pkg) {
@@ -377,7 +383,12 @@ function apply(ctx) {
           bmp: "image/bmp",
           ico: "image/x-icon"
         };
-        res.writeHead(200, { "content-type": FILE_TYPES[ext] ?? "application/octet-stream", "cache-control": "no-store" });
+        const type = FILE_TYPES[ext] ?? "application/octet-stream";
+        res.writeHead(200, {
+          "content-type": type,
+          "cache-control": "no-store",
+          ...SCRIPTABLE_FILE_TYPES.has(ext) ? SITE_SECURITY_HEADERS : {}
+        });
         res.end(data);
       } catch (err) {
         json(res, 404, { error: String(err) });
@@ -455,7 +466,11 @@ function apply(ctx) {
         }
         const data = await readFile(abs);
         const ext = (abs.split(".").pop() || "").toLowerCase();
-        res.writeHead(200, { "content-type": FILE_TYPES[ext] ?? "application/octet-stream", "cache-control": "no-store" });
+        res.writeHead(200, {
+          "content-type": FILE_TYPES[ext] ?? "application/octet-stream",
+          "cache-control": "no-store",
+          ...SCRIPTABLE_FILE_TYPES.has(ext) ? SITE_SECURITY_HEADERS : {}
+        });
         res.end(data);
       } catch (err) {
         json(res, 404, { error: String(err) });

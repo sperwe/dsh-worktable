@@ -80,6 +80,29 @@ const FILE_TYPES: Record<string, string> = {
 
 const SITE_PREFIX = '/api/worktable/site'
 
+/**
+ * 站点/文件下发时的安全响应头（issue #11 的服务端兜底）。
+ *
+ * `sandbox allow-scripts` 让被托管的页面运行在**不透明来源**里：脚本可跑，
+ * 但拿不到与宿主同源的权限（父页面 DOM、localStorage、cookie 均不可达）。
+ * 与客户端 iframe 的 `sandbox` 属性形成双保险 —— 客户端漏加属性时，这里仍能拦住。
+ *
+ * 刻意不加 `allow-same-origin`：那会让文档回到同源，防护失效。
+ * 不加 `allow-top-navigation`：被托管页面不该把宿主导航走。
+ */
+const SITE_SECURITY_HEADERS = {
+  'content-security-policy': "sandbox allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox",
+  'x-content-type-options': 'nosniff',
+  'referrer-policy': 'no-referrer',
+} as const
+
+/**
+ * 会被当作文档解析、因而能在宿主来源下执行脚本的扩展名。
+ * 命中这些才加 {@link SITE_SECURITY_HEADERS}；其余（二进制、图片、媒体）不需要，
+ * 加了反而可能让 PDF 内置阅读器等原生部件退化。
+ */
+const SCRIPTABLE_FILE_TYPES = new Set(['html', 'htm', 'svg', 'xml', 'xhtml'])
+
 // 原生皮肤模板（esbuild text loader 嵌入；/api/worktable/template 路由直接下发）
 // @ts-ignore
 import dshellCss from '../template/dshell.css'
@@ -284,7 +307,14 @@ export function apply(ctx: Context) {
           json: 'application/json; charset=utf-8', md: 'text/markdown; charset=utf-8', markdown: 'text/markdown; charset=utf-8', txt: 'text/plain; charset=utf-8', log: 'text/plain; charset=utf-8',
           pdf: 'application/pdf', svg: 'image/svg+xml', png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', gif: 'image/gif', webp: 'image/webp', bmp: 'image/bmp', ico: 'image/x-icon',
         }
-        res.writeHead(200, { 'content-type': FILE_TYPES[ext] ?? 'application/octet-stream', 'cache-control': 'no-store' })
+        const type = FILE_TYPES[ext] ?? 'application/octet-stream'
+        // 只对「能作为文档执行脚本」的类型加 sandbox 头：HTML 可直接跑，SVG 能内联 <script>。
+        // PDF / 图片 / 音视频不加 —— 它们不需要脚本权限，而 sandbox 可能让 PDF 内置阅读器退化。
+        res.writeHead(200, {
+          'content-type': type,
+          'cache-control': 'no-store',
+          ...(SCRIPTABLE_FILE_TYPES.has(ext) ? SITE_SECURITY_HEADERS : {}),
+        })
         res.end(data)
       } catch (err) {
         json(res, 404, { error: String(err) })
@@ -307,6 +337,8 @@ export function apply(ctx: Context) {
           res.writeHead(200, { 'content-type': 'text/css; charset=utf-8', 'cache-control': 'no-store' })
           res.end(dshellCss)
         } else {
+          // 原生皮肤骨架由插件自带、可信且零同源依赖（实测无 localStorage/parent/fetch），
+          // 刻意不加 sandbox 头 —— 它不是不可信输入，隔离只会给主题注入带来无谓的限制。
           res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' })
           res.end(dshellHtml)
         }
@@ -340,7 +372,11 @@ export function apply(ctx: Context) {
         if (info.size > 40 * 1024 * 1024) { json(res, 413, { error: 'file too large' }); return }
         const data = await readFile(abs)
         const ext = (abs.split('.').pop() || '').toLowerCase()
-        res.writeHead(200, { 'content-type': FILE_TYPES[ext] ?? 'application/octet-stream', 'cache-control': 'no-store' })
+        res.writeHead(200, {
+          'content-type': FILE_TYPES[ext] ?? 'application/octet-stream',
+          'cache-control': 'no-store',
+          ...(SCRIPTABLE_FILE_TYPES.has(ext) ? SITE_SECURITY_HEADERS : {}),
+        })
         res.end(data)
       } catch (err) {
         json(res, 404, { error: String(err) })
